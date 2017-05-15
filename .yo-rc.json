@@ -1,0 +1,12 @@
+{
+  "generator-sppp": {
+    "appname": "splists",
+    "appdesc": "AngularJs directives for rendering SharePoint lists",
+    "author": "Denis Molodtsov",
+    "siteUrl": "https://jolera365.sharepoint.com/sd/",
+    "username": "dmolodtsov@jolera.com",
+    "spRootFolder": "_catalogs/masterpage/splists",
+    "dlRootFolder": "./src",
+    "bowerlibs": []
+  }
+}

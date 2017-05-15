@@ -1,0 +1,24 @@
+{
+  "name": "splists",
+  "version": "1.0.0",
+  "description": "AngularJs directives for rendering SharePoint lists",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Denis Molodtsov",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "gulp": "*",
+    "gulp-spsave": "*",
+    "gulp-watch": "*",
+    "gulp-prompt": "*",
+    "sppull": "*",
+    "path": "*",
+    "sp-live-reload": "*",
+    "through2": "*",
+    "cpass": "*",
+    "jsonfile": "*"
+  }
+}
