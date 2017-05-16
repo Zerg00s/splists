@@ -1,0 +1,12 @@
+<div class="list-view-grid">
+    <h3>{{vm.siteUrl}}</h3>
+    <h3>{{vm.listTitle}}</h3>
+    <h3>{{vm.viewTitle}}</h3>
+
+    <div class="panel panel-info" ng-repeat='field in viewFields'>
+        <div class="panel-heading">{{field.Title}}</div>
+        <div class="panel-body" >
+          {{field.InternalName}}
+        </div>
+    </div>
+</div>

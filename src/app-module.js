@@ -1,25 +1,15 @@
-(function() {
+(function () {
     'use strict';
 
-    angular.module('app', [
-        'splists'
-    ]);
-})();
+    angular.module('app', ['splists']);
 
+    angular.module('app')
+        .controller('AppController', AppController);
 
-(function() {
-'use strict';
-
-    angular
-        .module('app')
-        .controller('AppController', ControllerController);
-
-    ControllerController.inject = []; 
-    function ControllerController() {
+    AppController.inject = [];
+    function AppController() {
         var vm = this;
-        
-        vm.message = "hello world"
-      
-     
+
+        vm.message = "sp-list directive";
     }
 })();

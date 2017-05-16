@@ -147,7 +147,7 @@ module.exports = (function() {
                 siteUrl: context.siteUrl,
                 folder: appConf.spRootFolder,
                 flatten: false,
-                checkin: true,
+                checkin: false,
                 checkinType: 1
             },
             creds: context
