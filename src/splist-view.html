@@ -3,10 +3,10 @@
     <h3>{{vm.listTitle}}</h3>
     <h3>{{vm.viewTitle}}</h3>
 
-    <div class="panel panel-info" ng-repeat='field in viewFields'>
-        <div class="panel-heading">{{field.Title}}</div>
+    <div class="panel panel-info" ng-repeat='item in items'>
+        <div class="panel-heading">{{item.Id}}</div>
         <div class="panel-body" >
-          {{field.InternalName}}
+          {{item.Client_x0020_Name.Title}}
         </div>
     </div>
 </div>

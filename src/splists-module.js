@@ -34,16 +34,9 @@ function splist($http) {
 }
 /* @ngInject */
 function splistController($attrs, $scope, $q, spListsFactory) {
-    spListsFactory.getViewFieldsRitch($attrs.siteUrl, $attrs.listTitle, $attrs.viewTitle)
-    .then(function(viewFields){
-        $scope.viewFields = viewFields;
-    });
-
-
-    spListsFactory.getAllItems($attrs.siteUrl, $attrs.listTitle)
-        .then(function (items) {
-            $scope.items = items;
-        });
-
-
+   spListsFactory.getItemsWithLookups($attrs.siteUrl, $attrs.listTitle, $attrs.viewTitle)
+   .then(function(items){
+        $scope.items = items;
+        console.log(items);
+   });
 }

@@ -12,7 +12,8 @@
             getAllItems: getAllItems,
             getViewFields: getViewFields,
             getListFields: getListFields,
-            getViewFieldsRitch: getViewFieldsRitch
+            getViewFieldsRitch: getViewFieldsRitch,
+            getItemsWithLookups: getItemsWithLookups
         };
 
         return listFactory;
@@ -36,7 +37,6 @@
         }
 
         function cleanupField(field) {
-
             var cleanedField = {
                 Title: field.Title,
                 InternalName: field.InternalName,
@@ -67,7 +67,6 @@
                 cleanedField.Choices = field.Choices.results;
             }
 
-            $log.info(cleanedField.TypeAsString, JSON.stringify(cleanedField, null, 3));
 
             return cleanedField;
         }
@@ -103,7 +102,16 @@
                         return field;
                     });
 
-                    return viewFields;
+                    return viewFields
+                        .map(function (field) {
+                            if (field.InternalName.indexOf('_x') == 0) {
+                                field.InternalName = "OData_" + field.InternalName;
+                            }
+                            return field;
+                        })
+                        .filter(function (field) {
+                            return field.ReadOnlyField == false;
+                        });
                 })
 
         }
@@ -122,6 +130,49 @@
                 });
         }
 
+        function getItemsWithLookups(siteUrl, listTitle, viewTitle) {
+            return getViewFieldsRitch(siteUrl, listTitle, viewTitle)
+                .then(getItems)
+
+            function getItems(viewFields) {
+                var lookupFields = viewFields.filter(function (field) {
+                    if (field.TypeAsString == 'Lookup' || field.TypeAsString == 'User') {
+                        return true;
+                    }
+                }).map(function (lookupField) {
+                    return lookupField.InternalName;
+                }).join(',');
+
+                var allFields = viewFields.map(function (field) {
+                    console.log(JSON.stringify(field));
+                    var select = field.InternalName;
+                    if (field.TypeAsString == 'Lookup' || field.TypeAsString == 'User') {
+                        select = select + '/' + field.LookupField;
+                    }
+
+                    return select;
+                }).join(',');
+
+                var select = "?$select=ID," + allFields;
+                var expand = "&$expand=" + lookupFields;
+                var itemsUrl = concatUrls(siteUrl, '/_api/web/lists/');
+                itemsUrl = concatUrls(itemsUrl, "getByTitle('" + listTitle + "')/items");
+                itemsUrl = itemsUrl + select + expand;
+                $log.info(itemsUrl);
+                var getItemsUrl = {
+                    url: itemsUrl,
+                    method: 'GET',
+                    headers: {
+                        accept: 'application/json;odata=verbose'
+                    }
+                };
+
+                return $http(getItemsUrl)
+                    .then(function (response) {
+                        return response.data.d.results;
+                    });
+            }
+        }
         function getAllItems(siteUrl, listTitle) {
             var itemsUrl = concatUrls(siteUrl, '/_api/web/lists/');
             itemsUrl = concatUrls(itemsUrl, "getByTitle('" + listTitle + "')/items");
@@ -136,7 +187,7 @@
 
             return $http(getItemsUrl)
                 .then(function (response) {
-                    return response.data.d.results.map;
+                    return response.data.d.results;
                 });
         }
     }
