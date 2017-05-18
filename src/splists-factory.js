@@ -5,15 +5,15 @@
         .module('splists')
         .factory('spListsFactory', spListsFactory);
 
-    spListsFactory.inject = ['$log', '$http', '$q'];
-    function spListsFactory($log, $http, $q) {
+    spListsFactory.inject = ['$log', '$http', '$q', '$sce'];
+    function spListsFactory($log, $http, $q, $sce) {
         var listFactory = {
             description: 'listFactory',
-            getAllItems: getAllItems,
             getViewFields: getViewFields,
             getListFields: getListFields,
             getViewFieldsRitch: getViewFieldsRitch,
-            getItemsWithLookups: getItemsWithLookups
+            getItemsWithLookups: getItemsWithLookups,
+            getNextItems: getNextItems
         };
 
         return listFactory;
@@ -36,7 +36,82 @@
             }
         }
 
+        /* Allo HTML content to be rendered correctny, Lookup fields to display text instead of IDs*/
+        function processListItemValues(items, viewFields) {
+            var refinedItems = [];
+
+            for (let item of items) {
+                for (let field of viewFields) {
+                    switch (field.TypeAsString) {
+                        case "Note":
+                            if (field.RichText) {
+                                item[field.InternalName] = $sce.trustAsHtml(item[field.InternalName]);
+                            }
+                            break;
+                        case "Computed":
+                            if(field.InternalName == "File"){
+                                var filename = item[field.InternalName].ServerRelativeUrl.replace(/^.*[\\\/]/, '');
+                                var fileLink = "<a href='"+item[field.InternalName].ServerRelativeUrl+"'>"+filename+"</a>";
+                                item[field.InternalName] = $sce.trustAsHtml(fileLink);
+                            }
+                        break;
+                        case "Lookup":
+                        case "User":
+                            item[field.InternalName] = item[field.InternalName].Title;
+                            break;
+                        case "LookupMulti":
+                        case "UserMulti":
+                            item[field.InternalName] = item[field.InternalName].results.map(function (lookup) {
+                                return lookup.Title;
+                            }).join(', ');
+                            break;
+                        case "DateTime":
+                            if (field.DisplayFormat == 1) { // 1 means Date and Time. 
+                                item[field.InternalName] = new Date(item[field.InternalName]).toLocaleString();
+                            }
+                            else { // 0 means just Date, without time
+                                item[field.InternalName] = new Date(item[field.InternalName]).toLocaleDateString();
+                            }
+                            break;
+                        case "URL":
+                            var hyperLink = "<a href='" + item[field.InternalName].Hyperlink + "'>" + item[field.InternalName].Description + "</a>";
+                            item[field.InternalName] = $sce.trustAsHtml(hyperLink)
+                            break;
+                        case "MultiChoice":
+                            item[field.InternalName] = item[field.InternalName].results.join(', ');
+                            break;
+                        case "TaxonomyFieldType":
+                            //TODO: get values from the global taxonomy cache:
+                            item[field.InternalName] = item[field.InternalName].Label;
+
+                            //item[field.InternalName].TermGuid + ", " +
+                            //item[field.InternalName].WssId;
+                            break;
+                        case "TaxonomyFieldTypeMulti":
+                            item[field.InternalName] =
+                                item[field.InternalName].results.map(function (metadata) {
+                                    return metadata.Label;
+                                    // metadata.TermGuid + ", " +
+                                    // metadata.WssId;
+                                }).join(', ');
+
+                            break;
+
+                        default:
+                        // do nothing
+                    }
+
+
+                }
+                refinedItems.push(item);
+            }
+
+            return refinedItems;
+        }
+
+        /*Transform ugly field properties to a useble object */
         function cleanupField(field) {
+
             var cleanedField = {
                 Title: field.Title,
                 InternalName: field.InternalName,
@@ -45,6 +120,8 @@
                 TypeDisplayName: field.TypeDisplayName,
                 Description: field.Description,
                 Group: field.Group,
+
+                DisplayFormat: field.DisplayFormat,
 
                 AllowMultipleValues: field.AllowMultipleValues,
                 DefaultValue: field.DefaultValue,
@@ -67,7 +144,6 @@
                 cleanedField.Choices = field.Choices.results;
             }
 
-
             return cleanedField;
         }
 
@@ -85,7 +161,6 @@
                 });
         }
 
-
         /*Get view fields with all useful field properties*/
         function getViewFieldsRitch(siteUrl, listTitle, viewTitle) {
             var viewFieldsPromise = getViewFields(siteUrl, listTitle, viewTitle);
@@ -102,18 +177,43 @@
                         return field;
                     });
 
-                    return viewFields
+
+                    var viewFields = viewFields
                         .map(function (field) {
+                            if (field.InternalName.indexOf('LinkFilename') == 0){
+                                console.log('File', JSON.stringify(field, null, 3));
+                                field.InternalName = "File";
+                                field.ReadOnlyField = false;
+                            }
                             if (field.InternalName.indexOf('_x') == 0) {
                                 field.InternalName = "OData_" + field.InternalName;
+                            }
+                            if (field.ReadOnlyField && field.InternalName.indexOf('Title') != -1) {
+                                field.InternalName = 'Title';
+                                field.ReadOnlyField = false;
                             }
                             return field;
                         })
                         .filter(function (field) {
                             return field.ReadOnlyField == false;
                         });
+
+                    return getUniqueFields(viewFields);
                 })
 
+            function getUniqueFields(viewFields) {
+                //Some fields will have the same InternalNames. we don't want these to be repeated
+                let uniqueFields = [];
+                for (let field of viewFields) {
+                    if (!uniqueFields.find(function (uniqueField) {
+                        return field.InternalName == uniqueField.InternalName;
+                    })) {
+                        uniqueFields.push(field);
+                    }
+                }
+
+                return uniqueFields;
+            }
         }
 
         /*Get all list fields */
@@ -130,34 +230,72 @@
                 });
         }
 
-        function getItemsWithLookups(siteUrl, listTitle, viewTitle) {
-            return getViewFieldsRitch(siteUrl, listTitle, viewTitle)
-                .then(getItems)
+        function getItemsWithLookups(siteUrl, listTitle, viewTitle, pageSize) {
 
-            function getItems(viewFields) {
+            var viewFieldsPromise = getViewFieldsRitch(siteUrl, listTitle, viewTitle);
+            var itemFormPromise = getItemForm();
+            return $q.all([viewFieldsPromise, itemFormPromise])
+                .then(getItems);
+
+
+            /*Appending ?$select=.. and &$expand=... to the URL */
+            function appendFieldSelectors(itemsUrl, viewFields) {
                 var lookupFields = viewFields.filter(function (field) {
-                    if (field.TypeAsString == 'Lookup' || field.TypeAsString == 'User') {
+                    if (field.TypeAsString == 'Lookup' ||
+                        field.TypeAsString == 'LookupMulti' ||
+                        field.TypeAsString == 'User' ||
+                        field.TypeAsString == 'UserMulti' ||
+                        field.InternalName == 'File') {
                         return true;
                     }
                 }).map(function (lookupField) {
                     return lookupField.InternalName;
                 }).join(',');
 
-                var allFields = viewFields.map(function (field) {
-                    console.log(JSON.stringify(field));
+                var allViewFields = viewFields.map(function (field) {
                     var select = field.InternalName;
-                    if (field.TypeAsString == 'Lookup' || field.TypeAsString == 'User') {
+                    if (field.TypeAsString == 'Lookup' ||
+                        field.TypeAsString == 'LookupMulti') {
                         select = select + '/' + field.LookupField;
                     }
-
+                    else if (field.TypeAsString == 'User' ||
+                        field.TypeAsString == 'UserMulti') {
+                        select = select + '/' + "Title";
+                    }
+                    else if (field.InternalName == 'File'){
+                        console.log(JSON.stringify(field, null , 3));
+                        select = select + '/' + "ServerRelativeUrl";
+                    }
+                    $log.info(field);
                     return select;
                 }).join(',');
 
-                var select = "?$select=ID," + allFields;
+                var select = "?$select=ID," + allViewFields;
                 var expand = "&$expand=" + lookupFields;
+
+                return itemsUrl + select + expand;
+            }
+
+            function getItemForm() {
+                var itemFormUrl = siteUrl + "/_api/web/lists/GetByTitle('" + listTitle + "')/Forms?$select=ServerRelativeUrl&$filter=FormType eq " + 6;
+                return $http({
+                    url: itemFormUrl,
+                    method: 'GET',
+                    headers: { accept: 'application/json;odata=verbose' }
+                })
+                    .then(function (formResult) {
+                        let itemFormUrl = formResult.data.d.results[0].ServerRelativeUrl;
+                        return itemFormUrl;
+                    });
+            }
+
+            function getItems(results) {
+                var viewFields = results[0];
+                var itemForm = results[1];
                 var itemsUrl = concatUrls(siteUrl, '/_api/web/lists/');
                 itemsUrl = concatUrls(itemsUrl, "getByTitle('" + listTitle + "')/items");
-                itemsUrl = itemsUrl + select + expand;
+                itemsUrl = appendFieldSelectors(itemsUrl, viewFields);
+                itemsUrl = itemsUrl + "&$top=" + pageSize;
                 $log.info(itemsUrl);
                 var getItemsUrl = {
                     url: itemsUrl,
@@ -169,16 +307,20 @@
 
                 return $http(getItemsUrl)
                     .then(function (response) {
-                        return response.data.d.results;
+                        return {
+                            items: processListItemValues(response.data.d.results, viewFields),
+                            viewFields: viewFields,
+                            itemForm: itemForm,
+                            nextUrl: response.data.d.__next // This is used to get the next batch of items
+                        };
                     });
             }
         }
-        function getAllItems(siteUrl, listTitle) {
-            var itemsUrl = concatUrls(siteUrl, '/_api/web/lists/');
-            itemsUrl = concatUrls(itemsUrl, "getByTitle('" + listTitle + "')/items");
-            $log.info(itemsUrl);
+
+        function getNextItems(nextUrl, viewFields) {
+            $log.info(nextUrl);
             var getItemsUrl = {
-                url: itemsUrl,
+                url: nextUrl,
                 method: 'GET',
                 headers: {
                     accept: 'application/json;odata=verbose'
@@ -187,8 +329,12 @@
 
             return $http(getItemsUrl)
                 .then(function (response) {
-                    return response.data.d.results;
+                    return {
+                        items: processListItemValues(response.data.d.results, viewFields),
+                        nextUrl: response.data.d.__next // This is used to get the next batch of items
+                    };
                 });
         }
+
     }
 })();

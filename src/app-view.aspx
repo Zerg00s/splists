@@ -13,7 +13,9 @@
     </head>
     <body ng-app="app" ng-controller="AppController as app"> 
         <h2>{{app.message}}</h2>
-            <splist site-url='/sd/' list-title='Client Servers' view-title='Client Servers - HomePage'></splist>
+            <!--<splist site-url='/sd/' list-title='Client Servers' page-size='10' view-title='Client Servers - HomePage'></splist>-->
+            <!--<splist site-url='/sd/' list-title='SampleList' page-size='1' view-title='All Items'></splist>-->
+            <splist site-url='/sd/' list-title='Client Pictures' page-size='10' view-title='All Pictures'></splist>
     </body>
 </html>
 
