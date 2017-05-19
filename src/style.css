@@ -1,3 +1,27 @@
-body{
-    /*display: flex;*/
+.gridView,
+[role='rowgroup'] {
+    height: 100% !important;
+    overflow:hidden !important;
 }
+.ui-grid-canvas{
+    height:100% !important;
+}
+
+.ui-grid-cell-contents{
+    font-size: 12px;
+}
+.open-link{
+    margin-left: 20px;
+}
+
+
+/*.ui-grid-row{
+    height: 100% !important;
+    display: table-row !important;
+}
+
+.ui-grid-cell,
+.ui-grid-cell-contents{
+    display: table !important;
+    white-space:normal !important;
+}*/

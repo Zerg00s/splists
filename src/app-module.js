@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    angular.module('app', ['splists']);
+    angular.module('app', ['splists', 'ui.grid', 'ui.grid.resizeColumns']);
 
     angular.module('app')
         .controller('AppController', AppController);

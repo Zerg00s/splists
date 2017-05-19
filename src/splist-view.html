@@ -1,26 +1,5 @@
 <div class="list-view-grid">
-    <div>{{vm.siteUrl}}</div>
-    <div>{{vm.listTitle}}</div>
-    <div>{{vm.viewTitle}}</div>
-
-    <div class="panel panel-info" ng-repeat='item in items'>
-        <div class="panel-heading">{{item.Id}}</div>
-        <div class="panel-body">
-            {{item.Title}}
-            {{item.Single_x0020_Line}}
-            <div>
-                {{item | json}}
-            </div>
-            <div ng-bind-html="item.File"></div>
-
-            <div >{{item.ChoiceMulti}}</div>
-        </div>
-    </div>
-
+    <h4><a ng-href='{{vm.siteUrl + vm.listTitle}}' target='_blank'>{{vm.listTitle}} ||  {{vm.viewTitle}}</a> </h4>
+    <div ui-grid="{ data: items, columnDefs: columnDefs}" class="gridView" ui-grid-resize-columns></div>
     <button type="button" ng-click="getNextBatchOfItems()">Load more</button>
-
-    <div>{{viewFields | json}}</div>
-
-    <div>{{itemForm | json}}</div>
-
 </div>
