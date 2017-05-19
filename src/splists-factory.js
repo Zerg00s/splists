@@ -13,7 +13,8 @@
             getListFields: getListFields,
             getViewFieldsRitch: getViewFieldsRitch,
             getItemsWithLookups: getItemsWithLookups,
-            getNextItems: getNextItems
+            getNextItems: getNextItems,
+            getAllItems: getAllItems
         };
 
         return listFactory;
@@ -49,12 +50,12 @@
                             }
                             break;
                         case "Computed":
-                            if(field.InternalName == "File"){
+                            if (field.InternalName == "File") {
                                 var filename = item[field.InternalName].ServerRelativeUrl.replace(/^.*[\\\/]/, '');
-                                var fileLink = "<a href='"+item[field.InternalName].ServerRelativeUrl+"'>"+filename+"</a>";
+                                var fileLink = "<a href='" + item[field.InternalName].ServerRelativeUrl + "'>" + filename + "</a>";
                                 item[field.InternalName] = $sce.trustAsHtml(fileLink);
                             }
-                        break;
+                            break;
                         case "Lookup":
                         case "User":
                             item[field.InternalName] = item[field.InternalName].Title;
@@ -100,8 +101,6 @@
                         default:
                         // do nothing
                     }
-
-
                 }
                 refinedItems.push(item);
             }
@@ -115,27 +114,20 @@
             var cleanedField = {
                 Title: field.Title,
                 InternalName: field.InternalName,
-
                 TypeAsString: field.TypeAsString,
                 TypeDisplayName: field.TypeDisplayName,
                 Description: field.Description,
                 Group: field.Group,
-
                 DisplayFormat: field.DisplayFormat,
-
                 AllowMultipleValues: field.AllowMultipleValues,
                 DefaultValue: field.DefaultValue,
-
                 Required: field.Required,
                 Hidden: field.Hidden,
                 ReadOnlyField: field.ReadOnlyField,
-
                 LookupField: field.LookupField,
                 LookupList: field.LookupList,
-
                 RichText: field.RichText, //true/false
                 NumberOfLines: field.NumberOfLines,
-
                 SchemaXml: field.SchemaXml,
                 Id: field.Id
             }
@@ -180,7 +172,7 @@
 
                     var viewFields = viewFields
                         .map(function (field) {
-                            if (field.InternalName.indexOf('LinkFilename') == 0){
+                            if (field.InternalName.indexOf('LinkFilename') == 0) {
                                 console.log('File', JSON.stringify(field, null, 3));
                                 field.InternalName = "File";
                                 field.ReadOnlyField = false;
@@ -262,8 +254,8 @@
                         field.TypeAsString == 'UserMulti') {
                         select = select + '/' + "Title";
                     }
-                    else if (field.InternalName == 'File'){
-                        console.log(JSON.stringify(field, null , 3));
+                    else if (field.InternalName == 'File') {
+                        console.log(JSON.stringify(field, null, 3));
                         select = select + '/' + "ServerRelativeUrl";
                     }
                     $log.info(field);
@@ -334,6 +326,38 @@
                         nextUrl: response.data.d.__next // This is used to get the next batch of items
                     };
                 });
+        }
+
+        function getAllItems(siteUrl, listTitle) {
+            var listItemsUrl = concatUrls(siteUrl, "/_api/web/lists/getByTitle('" + listTitle + "')/items");
+            var listItems = [];
+            var deferred = $q.defer();
+            var getItemsUrl = {
+                url: listItemsUrl,
+                method: 'GET',
+                headers: {
+                    accept: 'application/json;odata=verbose'
+                }
+            };
+
+            $http(getItemsUrl).then(parseListItems);
+
+            function parseListItems(result) {
+                var results = result.data.d.results;
+                for (var i = 0; i < results.length; i++) {
+                    listItems.push(results[i]);
+                }
+
+                if (result.data.d.__next) {
+                    getItemsUrl.url = result.data.d.__next;
+                    $http(getItemsUrl).then(parseListItems);
+                }
+                else {
+                    deferred.resolve(listItems);
+                }
+            }
+
+            return deferred.promise;
         }
 
     }
