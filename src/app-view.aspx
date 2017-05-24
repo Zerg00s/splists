@@ -28,14 +28,14 @@
     <div class="panel panel-primary">
         <div class="panel-heading">
             <list-item-select site-url='/sd/' list-title='Client List' 
-            selected-item='app.item'></list-item-select>
+            selected-item='app.item'/>
         </div> 
         <div style="margin:20px;">
             <splist site-url='/sd/' 
                     list-title='Client Servers'  
                     view-title='Client Servers - HomePage'
-                    lookup-field='Client_x0020_Name' lookup-id='app.item.ID' 
-                    ></splist>
+                    lookup-field='Client_x0020_Name' lookup-id='app.item.ID'>
+                    </splist>
             <splist site-url='/sites/demo/Kiosk/' list-title='Signins'  view-title='All Items'></splist>
 
             <!--<splist site-url='/sd/' list-title='SampleList' page-size='2' view-title='All Items'></splist>
