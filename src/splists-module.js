@@ -14,13 +14,14 @@
             controller: splistController,
             controllerAs: 'vm',
             templateUrl: 'splist-view.html',
-            link: link,
             restrict: 'E',
             scope: {
                 siteUrl: '@',
                 listTitle: '@',
                 viewTitle: '@',
-                pageSize: '@'
+                pageSize: '@',
+                lookupField: '@',
+                lookupId: '='
             },
             compile: function (element, attrs) { //setting default values
                 if (!attrs.pageSize) { attrs.pageSize = '10'; }
@@ -28,26 +29,40 @@
         };
         return directive;
 
-        function link(scope, element, attrs) {
-
-        }
     }
 
     function splistController($attrs, $scope, $q, spListsFactory, $window) {
-        spListsFactory.getItemsWithLookups($attrs.siteUrl, $attrs.listTitle, $attrs.viewTitle, $attrs.pageSize)
-            .then(function (results) {
-                $scope.items = results.items;
-                $scope.nextUrl = results.nextUrl;
-                $scope.viewFields = results.viewFields;
-                $scope.itemForm = results.itemForm;
-                $scope.columnDefs = getColumnDefs($scope.viewFields);
+
+        if ($attrs.lookupField) {
+            $scope.$watch('vm.lookupId', function (lookupId) {
+                if (lookupId) {
+                    $scope.nextUrl = null;
+                    let filter = $attrs.lookupField + "/Id eq " + lookupId;
+                    getItems(filter);
+                }
             });
+        }
+        else {
+            getItems();
+        }
+
 
         $scope.getNextBatchOfItems = getNextBatchOfItems;
 
         $scope.click = function (row) {
             console.log(row.entity);
             $window.open($scope.itemForm + "?ID=" + row.entity.ID, '_blank');
+        }
+
+        function getItems(filter) {
+            spListsFactory.getItemsWithLookups($attrs.siteUrl, $attrs.listTitle, $attrs.viewTitle, $attrs.pageSize, filter)
+                .then(function (results) {
+                    $scope.items = results.items;
+                    $scope.nextUrl = results.nextUrl;
+                    $scope.viewFields = results.viewFields;
+                    $scope.itemForm = results.itemForm;
+                    $scope.columnDefs = getColumnDefs($scope.viewFields);
+                });
         }
 
         function getNextBatchOfItems() {
@@ -64,7 +79,7 @@
 
         function getColumnDefs(viewFields) {
             var columnDefs = [];
-            var columnDefinition = { name: ' ' , width: 70};
+            var columnDefinition = { name: ' ', width: 70 };
             columnDefinition.cellTemplate = '<div><a class="open-link" ng-click="grid.appScope.click(row)" href="#" >Edit</a></div>'
             columnDefs.push(columnDefinition);
             for (let field of viewFields) {
@@ -98,18 +113,17 @@
             bindToController: true,
             controller: listItemSelectController,
             controllerAs: 'vm',
-            link: link,
             restrict: 'E',
             scope: {
                 siteUrl: '@',
-                listTitle: '@'
+                listTitle: '@',
+                selectedItem: '='
             },
             templateUrl: 'listItemSelect-view.html'
         };
         return directive;
 
-        function link(scope, element, attrs) {
-        }
+
     }
     function listItemSelectController($attrs, $scope, $http, spListsFactory) {
         var vm = this;
@@ -120,6 +134,13 @@
             .then(function (items) {
                 vm.items = items;
             })
+
+        // $scope.$watch(() => vm.item.selected, function (newVal) {
+        //     if (newVal) {
+        //         $scope.selectedId = newVal;
+        //         console.log(newVal);
+        //     }
+        // });
     }
 
 

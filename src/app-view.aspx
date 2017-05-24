@@ -15,7 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular-sanitize.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular-animate.min.js"></script>
     <script src='splists-module.js'></script>
-    
+
     <script src='splists-factory.js'></script>
     <script src="lib/ui-grid.min.js"></script>
     <script src="lib/select.min.js"></script>
@@ -25,16 +25,22 @@
 </head>
 
 <body ng-app="app" ng-controller="AppController as app">
-
     <div class="panel panel-primary">
         <div class="panel-heading">
-            <list-item-select site-url='/sd/' list-title='Client List' ng-model='app.company'></list-item-select>
-        </div>
+            <list-item-select site-url='/sd/' list-title='Client List' 
+            selected-item='app.item'></list-item-select>
+        </div> 
         <div style="margin:20px;">
-            <splist site-url='/sd/' list-title='Client Servers' page-size='3' view-title='Client Servers - HomePage'></splist>
-            <splist site-url='/sd/' list-title='SampleList' page-size='2' view-title='All Items'></splist>
+            <splist site-url='/sd/' 
+                    list-title='Client Servers'  
+                    view-title='Client Servers - HomePage'
+                    lookup-field='Client_x0020_Name' lookup-id='app.item.ID' 
+                    ></splist>
+            <splist site-url='/sites/demo/Kiosk/' list-title='Signins'  view-title='All Items'></splist>
+
+            <!--<splist site-url='/sd/' list-title='SampleList' page-size='2' view-title='All Items'></splist>
             <splist site-url='/sd/' list-title='Client Pictures' page-size='2' view-title='All Pictures'></splist>
-            <splist site-url='/sd/' list-title='Primary Contact' page-size='2' view-title='All Items'></splist>
+            <splist site-url='/sd/' list-title='Primary Contact' page-size='2' view-title='All Items'></splist>-->
 
         </div>
     </div>

@@ -1,4 +1,4 @@
-<ui-select ng-model="vm.item.selected">
+<ui-select ng-model="vm.selectedItem">
     <label class="col-sm-3 control-label">Client</label>
     <ui-select-match placeholder="Select a Client...">{{$select.selected.Title}}</ui-select-match>
     <ui-select-choices repeat="item in vm.items | filter: $select.search">

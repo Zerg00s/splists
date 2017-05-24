@@ -173,7 +173,6 @@
                     var viewFields = viewFields
                         .map(function (field) {
                             if (field.InternalName.indexOf('LinkFilename') == 0) {
-                                console.log('File', JSON.stringify(field, null, 3));
                                 field.InternalName = "File";
                                 field.ReadOnlyField = false;
                             }
@@ -222,7 +221,7 @@
                 });
         }
 
-        function getItemsWithLookups(siteUrl, listTitle, viewTitle, pageSize) {
+        function getItemsWithLookups(siteUrl, listTitle, viewTitle, pageSize, filter) {
 
             var viewFieldsPromise = getViewFieldsRitch(siteUrl, listTitle, viewTitle);
             var itemFormPromise = getItemForm();
@@ -255,10 +254,8 @@
                         select = select + '/' + "Title";
                     }
                     else if (field.InternalName == 'File') {
-                        console.log(JSON.stringify(field, null, 3));
                         select = select + '/' + "ServerRelativeUrl";
                     }
-                    $log.info(field);
                     return select;
                 }).join(',');
 
@@ -287,7 +284,11 @@
                 var itemsUrl = concatUrls(siteUrl, '/_api/web/lists/');
                 itemsUrl = concatUrls(itemsUrl, "getByTitle('" + listTitle + "')/items");
                 itemsUrl = appendFieldSelectors(itemsUrl, viewFields);
-                itemsUrl = itemsUrl + "&$top=" + pageSize;
+                itemsUrl += "&$top=" + pageSize.toString();               
+                
+                if (filter) {
+                    itemsUrl += "&$filter=" + filter;
+                }
                 $log.info(itemsUrl);
                 var getItemsUrl = {
                     url: itemsUrl,
