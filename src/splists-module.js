@@ -90,8 +90,12 @@
                     (field.TypeAsString == "Note" && field.RichText) ||
                     field.TypeAsString == "URL"
                 ) {
-                    columnDefinition.cellTemplate = '<div ng-bind-html="row.entity[col.field]"></div>';
+                    columnDefinition.cellTemplate = '<div style="word-wrap: normal; padding:10px" ng-bind-html="row.entity[col.field]"></div>';
                 }
+                else {
+                    columnDefinition.cellTemplate = '<div style="word-wrap: normal; padding:10px"> {{row.entity[col.field]}}</div>';
+                }
+
                 columnDefs.push(columnDefinition);
             }
 
